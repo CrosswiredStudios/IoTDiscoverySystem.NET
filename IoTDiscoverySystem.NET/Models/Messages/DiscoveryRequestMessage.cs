@@ -105,6 +105,15 @@ namespace IoTDiscoverySystem.NET.Models.Messages
             _knownDevices = new JArray();
         }
 
+        public DiscoveryRequestMessage(string command, string device, string ipAddress, JArray knownDevices)
+        {
+            _command = command;
+            _device = device;
+            _error = "";
+            _ipAddress = ipAddress;
+            _knownDevices = knownDevices;
+        }
+
         public DiscoveryRequestMessage( string requestText )
         {
             try
