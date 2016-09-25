@@ -29,19 +29,9 @@ namespace PotPiServer.Models
         #region Private
 
         /// <summary>
-        /// Flag to indicate server is broadcasting
-        /// </summary>
-        private bool _broadcasting;
-
-        /// <summary>
         /// A database to hold device data
         /// </summary>
         private SQLiteConnection _database;
-
-        /// <summary>
-        /// True if accepting incoming packets
-        /// </summary>
-        private bool _listening;
 
         /// <summary>
         /// A socket to broadcast discovery requests
@@ -109,10 +99,11 @@ namespace PotPiServer.Models
         /// </summary>
         public DiscoverySystemServer()
         {
-            _broadcasting = false;
+
             _database = new SQLiteConnection(new SQLite.Net.Platform.WinRT.SQLitePlatformWinRT(),
                                              Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "iotDiscSys.sqlite"));
-            _listening = false;
+            _database.CreateTable<Device>();
+
             _socket = new DatagramSocket();
         }
 
@@ -157,8 +148,7 @@ namespace PotPiServer.Models
                 _socket.MessageReceived += ReceiveDiscoveryResponse;
                 // Start the server
                 await _socket.BindServiceNameAsync(UdpPort);
-                // Set listening to true
-                _listening = true;
+
                 Debug.WriteLine("Discovery System: Success");
             }
             catch (Exception ex)
@@ -313,6 +303,7 @@ namespace PotPiServer.Models
             }
             catch(Exception ex)
             {
+                Debug.WriteLine("Discovery System Server - Send Discovery Request Failed: " + ex.Message);
                 return false;
             }
         }
