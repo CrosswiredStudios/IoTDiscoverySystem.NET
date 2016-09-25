@@ -1,9 +1,47 @@
 ﻿namespace IoTDiscoverySystem.NET.Models.Messages
 {
+    /// <summary>
+    /// A message template for informing the Discovery System Client that we have received their information
+    /// </summary>
     class DiscoveryAcceptMessage
     {
-        public string IpAddress { get; set; }
-        public string Device { get; set; }
-        public string Command { get; set; }
+        #region Properties
+
+        private string _command;
+        private string _device;
+        private string _ipAddress;
+
+        public string Command { get; }
+        public string Device { get; }
+        public string IpAddress { get; }
+
+        #endregion
+
+        #region Constructors
+
+        /// <summary>
+        /// Create a blank DiscoveryAcceptMessage
+        /// </summary>
+        public DiscoveryAcceptMessage()
+        {
+            _command = "";
+            _device = "";
+            _ipAddress = "";
+        }
+
+        /// <summary>
+        /// Create a DiscoveryAcceptMessage
+        /// </summary>
+        /// <param name="command">The command to pass in the accept message</param>
+        /// <param name="device">The name of the calling device</param>
+        /// <param name="ipAddress">The IP Address of the calling device</param>
+        public DiscoveryAcceptMessage(string command, string device, string ipAddress)
+        {
+            _command = command;
+            _device = device;
+            _ipAddress = ipAddress;
+        }
+
+        #endregion
     }
 }

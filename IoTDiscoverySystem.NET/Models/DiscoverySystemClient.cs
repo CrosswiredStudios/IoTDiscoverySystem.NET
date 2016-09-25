@@ -168,7 +168,7 @@ namespace PotPiPowerBox.Models
                     Debug.WriteLine("Contents: " + response);
 
                     // Create a Discovery Request object from the data
-                    DiscoveryRequestMessage request = new DiscoveryRequestMessage(response);
+                    DiscoveryRequestMessage request = new DiscoveryRequestMessage(response.Trim());
 
                     // If the message was a valid request
                     if (request.IsValid)
@@ -245,6 +245,7 @@ namespace PotPiPowerBox.Models
         /// </summary>
         public void StopBroadcasting()
         {
+            Debug.WriteLine("Discovery System Client: Stopping Discovery Response broadcast");
             _broadcasting = false;
         }
 

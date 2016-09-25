@@ -5,6 +5,11 @@ using System;
 namespace IoTDiscoverySystem.NET.Models.Messages
 {
     /// <summary>
+    /// A message template that will cause all instances of Discovery System Client on the network to begin responding with Discovery Response Messages.
+    /// 
+    /// Sample Discovery Reqeust Messages:
+    /// 
+    /// {"Command":"DISCOVER","IpAddress":"10.0.0.7", "Device":"PotPiServer", "KnownDevices":[]}
     /// {"Command":"DISCOVER","IpAddress":"10.0.0.7", "Device":"PotPiServer", "KnownDevices":[{"Device":"PotPiPowerBox", "IpAddress":"10.0.0.202", "SerialNumber":"123456"}]}
     /// </summary>
     class DiscoveryRequestMessage

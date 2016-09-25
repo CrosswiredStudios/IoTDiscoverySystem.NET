@@ -34,6 +34,16 @@ namespace PotPiServer.Models
         private SQLiteConnection _database;
 
         /// <summary>
+        /// The device that is hosting the Discovery system Server
+        /// </summary>
+        private string _deviceName;
+
+        /// <summary>
+        /// The serial number of the device that is hosting the Discovery System Server
+        /// </summary>
+        private string _serialNumber;
+
+        /// <summary>
         /// A socket to broadcast discovery requests
         /// </summary>
         private DatagramSocket _socket;
@@ -137,7 +147,7 @@ namespace PotPiServer.Models
         /// Initialize the Discovery System
         /// </summary>
         /// <returns></returns>
-        public async void Initialize(string udpPort)
+        public async void Initialize(string udpPort, string deviceName = "", string serialNumber = "")
         {
             Debug.WriteLine("Discovery System: Initializing");
 
@@ -232,21 +242,21 @@ namespace PotPiServer.Models
                         #endregion
 
                         #region Inform Device Of Acceptance
+                        if (!String.IsNullOrEmpty(response.TcpPort))
+                        {
 
-                        // Create a TCP connection with the device
-                        StreamSocket _tcpConnection = new StreamSocket();
-                        await _tcpConnection.ConnectAsync(new HostName(response.IpAddress), response.TcpPort);
+                            // Create a TCP connection with the device
+                            StreamSocket _tcpConnection = new StreamSocket();
+                            await _tcpConnection.ConnectAsync(new HostName(response.IpAddress), response.TcpPort);
 
-                        // Create an Accept Message
-                        DiscoveryAcceptMessage acceptMessage = new DiscoveryAcceptMessage();
-                        acceptMessage.IpAddress = IpAddress;
-                        acceptMessage.Device = "PotPiServer";
-                        acceptMessage.Command = "DISCOVERED";
-                        byte[] buffer = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(acceptMessage));
+                            // Create an Accept Message
+                            DiscoveryAcceptMessage acceptMessage = new DiscoveryAcceptMessage("DISCOVERED", _deviceName, IpAddress);
 
-                        // Send the message
-                        await _tcpConnection.OutputStream.WriteAsync(buffer.AsBuffer());
+                            byte[] buffer = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(acceptMessage));
 
+                            // Send the message
+                            await _tcpConnection.OutputStream.WriteAsync(buffer.AsBuffer());
+                        }
                         #endregion
 
                     }
