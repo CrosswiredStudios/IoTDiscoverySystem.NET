@@ -20,7 +20,7 @@ namespace PotPiServer.Models
 {
 
     /// <summary>
-    /// The Discovery System is a singleton used for gathering information about the other PotPiDevices that are on the local network.
+    /// The Discovery System is used for gathering information about the other devices that are on the local network.
     /// </summary>
     public sealed class DiscoverySystemServer
     {
