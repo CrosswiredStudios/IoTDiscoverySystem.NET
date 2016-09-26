@@ -11,9 +11,29 @@
         private string _device;
         private string _ipAddress;
 
-        public string Command { get; }
-        public string Device { get; }
-        public string IpAddress { get; }
+        public string Command
+        {
+            get
+            {
+                return _command;
+            }
+        }
+
+        public string Device
+        {
+            get
+            {
+                return _device;
+            }
+        }
+
+        public string IpAddress
+        {
+            get
+            {
+                return _ipAddress;
+            }
+        }
 
         #endregion
 
