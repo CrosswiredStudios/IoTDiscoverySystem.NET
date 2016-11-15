@@ -13,6 +13,8 @@ namespace IoTDiscoverySystem.NET.Models.Messages
 
         private string _device;
 
+        private string _deviceType;
+
         private string _error;
 
         private string _ipAddress; 

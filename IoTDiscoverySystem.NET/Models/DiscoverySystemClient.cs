@@ -32,6 +32,11 @@ namespace PotPiPowerBox.Models
         private string _deviceName;
 
         /// <summary>
+        /// The type of device
+        /// </summary>
+        private string _deviceType;
+
+        /// <summary>
         /// Port to send and receive TCP messages on
         /// </summary>
         private string _serialNumber;
@@ -121,7 +126,7 @@ namespace PotPiPowerBox.Models
         /// <param name="tcpPort">This is the TCP port that your application is listening on for confirmation</param>
         /// <param name="deviceName">This is the categorical or generic name for the device acting as a discovery system client</param>
         /// <param name="serialNumber">The serial number is a unique Id that can be used to differentiate between similar devices</param>
-        public async void Initialize(string udpPort, string tcpPort = "", string deviceName = "", string serialNumber = "")
+        public async void Initialize(string udpPort, string tcpPort = "", string deviceName = "", string deviceType = "", string serialNumber = "")
         {
             Debug.WriteLine("Discovery System: Initializing");
 
@@ -129,6 +134,7 @@ namespace PotPiPowerBox.Models
             {
                 // Set initial variables
                 _deviceName = deviceName;
+                _deviceType = _deviceType;
                 _serialNumber = serialNumber;
                 _udpPort = udpPort;
                 _tcpPort = tcpPort;

@@ -15,6 +15,8 @@ using IoTDiscoverySystem.NET.Models.Messages;
 using IoTDiscoverySystem.NET.Models.Database;
 using System.Collections.Generic;
 using Windows.Networking.Connectivity;
+using System.Threading;
+using Windows.System.Threading;
 
 namespace PotPiServer.Models
 {
@@ -112,6 +114,7 @@ namespace PotPiServer.Models
 
             _database = new SQLiteConnection(new SQLite.Net.Platform.WinRT.SQLitePlatformWinRT(),
                                              Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "iotDiscSys.sqlite"));
+            _database.DropTable<Device>();
             _database.CreateTable<Device>();
 
             _socket = new DatagramSocket();
@@ -154,10 +157,22 @@ namespace PotPiServer.Models
             try
             {
                 _udpPort = udpPort;
+
                 // Set the message received function
                 _socket.MessageReceived += ReceiveDiscoveryResponse;
+
                 // Start the server
                 await _socket.BindServiceNameAsync(UdpPort);
+
+                // Do an initial device discovery
+                DiscoverDevices();
+
+                // Set a timer to check for new devices every 30 mins
+                ThreadPoolTimer timer = ThreadPoolTimer.CreatePeriodicTimer((t) =>
+                {
+                    Debug.WriteLine("DiscoverySystemServer: Discovering Devives");
+                    DiscoverDevices();
+                }, TimeSpan.FromMinutes(10));
 
                 Debug.WriteLine("Discovery System: Success");
             }
@@ -200,7 +215,7 @@ namespace PotPiServer.Models
                         foreach (var device in Devices)
                         {
                             // If the stored device matches the device responding to the discovery request
-                            if (device.Name == response.Device &&
+                            if (device.Title == response.Device &&
                                device.SerialNumber == response.SerialNumber)
                             {
                                 // If the match is exact
@@ -233,7 +248,7 @@ namespace PotPiServer.Models
 
                         Device newDevice = new Device();
                         newDevice.IpAddress = response.IpAddress;
-                        newDevice.Name = response.Device;
+                        newDevice.Title = response.Device;
                         newDevice.SerialNumber = response.SerialNumber;
                         newDevice.State = "";
                         newDevice.TcpPort = response.TcpPort;
@@ -293,7 +308,7 @@ namespace PotPiServer.Models
                         foreach (var device in Devices)
                         {
                             JObject jDevice = new JObject();
-                            jDevice.Add("Device", device.Name);
+                            jDevice.Add("Device", device.Title);
                             jDevice.Add("IpAddress", device.IpAddress);
                             jDevice.Add("SerialNumber", device.SerialNumber);
                             jDevices.Add(jDevice);
