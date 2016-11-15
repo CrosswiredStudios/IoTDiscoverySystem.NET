@@ -134,7 +134,7 @@ namespace PotPiPowerBox.Models
             {
                 // Set initial variables
                 _deviceName = deviceName;
-                _deviceType = _deviceType;
+                _deviceType = deviceType;
                 _serialNumber = serialNumber;
                 _udpPort = udpPort;
                 _tcpPort = tcpPort;
@@ -228,11 +228,13 @@ namespace PotPiPowerBox.Models
                     using (var writer = new DataWriter(stream))
                     {
                         // Create a discovery response message
-                        DiscoveryResponseMessage discoveryResponse = new DiscoveryResponseMessage(IpAddress, _deviceName, _serialNumber, _tcpPort);
+                        DiscoveryResponseMessage discoveryResponse = new DiscoveryResponseMessage(IpAddress, _deviceName, _deviceType, _serialNumber, _tcpPort);
 
                         // Convert the request to a JSON string
                         writer.WriteString(JsonConvert.SerializeObject(discoveryResponse));
 
+                        Debug.WriteLine(JsonConvert.SerializeObject(discoveryResponse));
+                        
                         // Send
                         await writer.StoreAsync();
                     }

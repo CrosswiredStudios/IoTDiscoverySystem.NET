@@ -48,6 +48,7 @@ namespace IoTDiscoverySystem.NET.Models.Messages
                 // Make sure our minimum requirements are met
                 return !String.IsNullOrEmpty(IpAddress) &&
                        !String.IsNullOrEmpty(Device) &&
+                       !String.IsNullOrEmpty(DeviceType) &&
                        !String.IsNullOrEmpty(SerialNumber) &&
                        !String.IsNullOrEmpty(TcpPort);
             }
@@ -57,6 +58,11 @@ namespace IoTDiscoverySystem.NET.Models.Messages
         /// The type of device responding
         /// </summary>
         public string Device { get { return _device;  } }
+
+        /// <summary>
+        /// The type of device responding
+        /// </summary>
+        public string DeviceType { get { return _deviceType; } }
 
         /// <summary>
         /// Serial Number of the responder
@@ -82,6 +88,7 @@ namespace IoTDiscoverySystem.NET.Models.Messages
             {
                 JObject json = JObject.Parse(responseString);
                 _device = json["Device"].ToString();
+                _deviceType = json["DeviceType"].ToString();
                 _ipAddress = json["IpAddress"].ToString();
                 _serialNumber = json["SerialNumber"].ToString();
                 _tcpPort = json["TcpPort"].ToString();
@@ -92,10 +99,11 @@ namespace IoTDiscoverySystem.NET.Models.Messages
             }
         }
 
-        public DiscoveryResponseMessage(string ipAddress, string device, string serialNumber, string tcpPort)
+        public DiscoveryResponseMessage(string ipAddress, string device, string deviceType, string serialNumber, string tcpPort)
         {
             _ipAddress = ipAddress;
             _device = device;
+            _deviceType = deviceType;
             _serialNumber = serialNumber;
             _tcpPort = tcpPort;
         }

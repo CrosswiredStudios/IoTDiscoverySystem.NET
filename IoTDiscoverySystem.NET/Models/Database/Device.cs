@@ -18,8 +18,8 @@ namespace IoTDiscoverySystem.NET.Models.Database
         [JsonProperty(PropertyName = "ipAddress")]
         public string IpAddress { get; set; }
 
-        [JsonProperty(PropertyName = "title")]
-        public string Title { get; set; }
+        [JsonProperty(PropertyName = "deviceType")]
+        public string DeviceType { get; set; }
 
         [JsonProperty(PropertyName = "serialNumber")]
         public string SerialNumber { get; set; }
@@ -29,5 +29,8 @@ namespace IoTDiscoverySystem.NET.Models.Database
 
         [JsonProperty(PropertyName = "tcpPort")]
         public string TcpPort { get; set; }
+
+        [JsonProperty(PropertyName = "title")]
+        public string Title { get; set; }
     }
 }

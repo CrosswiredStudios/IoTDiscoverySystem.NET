@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using Windows.Networking.Connectivity;
 using System.Threading;
 using Windows.System.Threading;
+using System.Net.Http;
 
 namespace PotPiServer.Models
 {
@@ -135,13 +136,13 @@ namespace PotPiServer.Models
 
                 return true;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 throw ex;
             }
         }
 
-        public IAsyncOperation<bool>  DiscoverDevicesAsync()
+        public IAsyncOperation<bool> DiscoverDevicesAsync()
         {
             return this.DiscoverDevices().AsAsyncOperation();
         }
@@ -247,6 +248,7 @@ namespace PotPiServer.Models
                         #region Handle New Devices
 
                         Device newDevice = new Device();
+                        newDevice.DeviceType = response.DeviceType;
                         newDevice.IpAddress = response.IpAddress;
                         newDevice.Title = response.Device;
                         newDevice.SerialNumber = response.SerialNumber;
@@ -284,7 +286,7 @@ namespace PotPiServer.Models
 
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Debug.WriteLine("Discovery System - Failure: " + ex.Message);
             }
@@ -326,7 +328,7 @@ namespace PotPiServer.Models
                 }
                 return true;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Debug.WriteLine("Discovery System Server - Send Discovery Request Failed: " + ex.Message);
                 return false;
@@ -336,6 +338,22 @@ namespace PotPiServer.Models
         public IAsyncOperation<bool> SendDiscoveryRequestAsync()
         {
             return this.SendDiscoveryRequest().AsAsyncOperation();
+        }
+
+        public async Task UpdateDeviceStates()
+        {
+            foreach (var device in _database.Table<Device>())
+            {
+                if (device.DeviceType.ToLower() == "powerbox")
+                {
+                    using (HttpClient httpClient = new HttpClient())
+                    {
+                        HttpResponseMessage response = await httpClient.GetAsync(new Uri("http://" + device.IpAddress + "/api/outlets"));
+                        device.State = await response.Content.ReadAsStringAsync();
+                        _database.Update(device);
+                    }
+                }
+            }
         }
 
         #endregion
