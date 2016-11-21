@@ -323,6 +323,11 @@ namespace PotPiServer.Models
             return this.SendDiscoveryRequest().AsAsyncOperation();
         }
 
+        public void UpdateDevice(int id)
+        {
+            
+        }
+
         #endregion
     }
 }
