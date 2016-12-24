@@ -17,7 +17,9 @@ namespace IoTDiscoverySystem.NET.Models.Messages
 
         private string _error;
 
-        private string _ipAddress; 
+        private string _ipAddress;
+
+        private string _potPiDeviceId;
 
         private string _serialNumber;
 
@@ -65,6 +67,11 @@ namespace IoTDiscoverySystem.NET.Models.Messages
         public string DeviceType { get { return _deviceType; } }
 
         /// <summary>
+        /// The PotPi Device Id
+        /// </summary>
+        public string PotPiDeviceId { get { return _potPiDeviceId; } }
+
+        /// <summary>
         /// Serial Number of the responder
         /// </summary>
         public string SerialNumber { get { return _serialNumber; } }
@@ -90,6 +97,7 @@ namespace IoTDiscoverySystem.NET.Models.Messages
                 _device = json["Device"].ToString();
                 _deviceType = json["DeviceType"].ToString();
                 _ipAddress = json["IpAddress"].ToString();
+                _potPiDeviceId = json["PotPiDeviceId"].ToString();
                 _serialNumber = json["SerialNumber"].ToString();
                 _tcpPort = json["TcpPort"].ToString();
             }
@@ -99,11 +107,12 @@ namespace IoTDiscoverySystem.NET.Models.Messages
             }
         }
 
-        public DiscoveryResponseMessage(string ipAddress, string device, string deviceType, string serialNumber, string tcpPort)
-        {
-            _ipAddress = ipAddress;
+        public DiscoveryResponseMessage(string device, string deviceType, string ipAddress, string potPiDeviceId, string serialNumber, string tcpPort)
+        {            
             _device = device;
             _deviceType = deviceType;
+            _ipAddress = ipAddress;
+            _potPiDeviceId = potPiDeviceId;
             _serialNumber = serialNumber;
             _tcpPort = tcpPort;
         }

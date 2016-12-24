@@ -37,6 +37,11 @@ namespace PotPiPowerBox.Models
         private string _deviceType;
 
         /// <summary>
+        /// The pot pi device id
+        /// </summary>
+        private string _potPiDeviceId;
+
+        /// <summary>
         /// Port to send and receive TCP messages on
         /// </summary>
         private string _serialNumber;
@@ -126,7 +131,7 @@ namespace PotPiPowerBox.Models
         /// <param name="tcpPort">This is the TCP port that your application is listening on for confirmation</param>
         /// <param name="deviceName">This is the categorical or generic name for the device acting as a discovery system client</param>
         /// <param name="serialNumber">The serial number is a unique Id that can be used to differentiate between similar devices</param>
-        public async void Initialize(string udpPort, string tcpPort = "", string deviceName = "", string deviceType = "", string serialNumber = "")
+        public async void Initialize(string udpPort, string tcpPort = "", string deviceName = "", string deviceType = "", string serialNumber = "", string potPiDeviceId = "")
         {
             Debug.WriteLine("Discovery System: Initializing");
 
@@ -135,6 +140,7 @@ namespace PotPiPowerBox.Models
                 // Set initial variables
                 _deviceName = deviceName;
                 _deviceType = deviceType;
+                _potPiDeviceId = potPiDeviceId;
                 _serialNumber = serialNumber;
                 _udpPort = udpPort;
                 _tcpPort = tcpPort;
@@ -228,7 +234,7 @@ namespace PotPiPowerBox.Models
                     using (var writer = new DataWriter(stream))
                     {
                         // Create a discovery response message
-                        DiscoveryResponseMessage discoveryResponse = new DiscoveryResponseMessage(IpAddress, _deviceName, _deviceType, _serialNumber, _tcpPort);
+                        DiscoveryResponseMessage discoveryResponse = new DiscoveryResponseMessage(_deviceName, _deviceType, IpAddress, _potPiDeviceId, _serialNumber, _tcpPort);
 
                         // Convert the request to a JSON string
                         writer.WriteString(JsonConvert.SerializeObject(discoveryResponse));

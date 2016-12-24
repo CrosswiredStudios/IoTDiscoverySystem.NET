@@ -25,7 +25,7 @@ namespace PotPiServer.Models
     /// <summary>
     /// The Discovery System is used for gathering information about the other devices that are on the local network.
     /// </summary>
-    public sealed class DiscoverySystemServer
+    public sealed class DiscoverySystemServer : IDisposable
     {
         #region Properties
 
@@ -40,6 +40,11 @@ namespace PotPiServer.Models
         /// The device that is hosting the Discovery system Server
         /// </summary>
         private string _deviceName;
+
+        /// <summary>
+        /// A timer to periodically find smart devices on the network
+        /// </summary>
+        private Timer _discoverSmartDevicesTimer;
 
         /// <summary>
         /// The serial number of the device that is hosting the Discovery System Server
@@ -121,31 +126,14 @@ namespace PotPiServer.Models
             _socket = new DatagramSocket();
         }
 
+        public void Dispose()
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
 
         #region Methods
-
-        private async Task<bool> DiscoverDevices()
-        {
-            try
-            {
-                // Send out the Discovery Request
-                await SendDiscoveryRequest();
-                // Give the devices 5 seconds to respond
-                await Task.Delay(5000);
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
-
-        public IAsyncOperation<bool> DiscoverDevicesAsync()
-        {
-            return this.DiscoverDevices().AsAsyncOperation();
-        }
 
         /// <summary>
         /// Initialize the Discovery System
@@ -165,15 +153,8 @@ namespace PotPiServer.Models
                 // Start the server
                 await _socket.BindServiceNameAsync(UdpPort);
 
-                // Do an initial device discovery
-                DiscoverDevices();
-
-                // Set a timer to check for new devices every 30 mins
-                ThreadPoolTimer timer = ThreadPoolTimer.CreatePeriodicTimer((t) =>
-                {
-                    Debug.WriteLine("DiscoverySystemServer: Discovering Devives");
-                    DiscoverDevices();
-                }, TimeSpan.FromMinutes(10));
+                // Set a timer to discover new devices every minute
+                _discoverSmartDevicesTimer = new Timer(SendDiscoveryRequest, null, 0, 60000);
 
                 Debug.WriteLine("Discovery System: Success");
             }
@@ -293,10 +274,11 @@ namespace PotPiServer.Models
         }
 
         /// <summary>
-        /// Sends a discovery request
+        /// Sends a discovery request UDP packet
         /// </summary>
-        private async Task<bool> SendDiscoveryRequest()
+        public async void SendDiscoveryRequest(object state = null)
         {
+            Debug.WriteLine("DiscoverSystemServer: Sending Discovery Request");
             try
             {
                 // Get an output stream to all IPs on the given port
@@ -305,7 +287,7 @@ namespace PotPiServer.Models
                     // Get a data writing stream
                     using (var writer = new DataWriter(stream))
                     {
-                        // Include all known devices in the request to minimize traffic
+                        // Include all known devices in the request to minimize traffic (smart devices can use this info to determine if they need to respond)
                         JArray jDevices = new JArray();
                         foreach (var device in Devices)
                         {
@@ -326,18 +308,11 @@ namespace PotPiServer.Models
                         await writer.StoreAsync();
                     }
                 }
-                return true;
             }
             catch (Exception ex)
             {
                 Debug.WriteLine("Discovery System Server - Send Discovery Request Failed: " + ex.Message);
-                return false;
             }
-        }
-
-        public IAsyncOperation<bool> SendDiscoveryRequestAsync()
-        {
-            return this.SendDiscoveryRequest().AsAsyncOperation();
         }
 
         public async Task UpdateDeviceStates()
@@ -355,6 +330,8 @@ namespace PotPiServer.Models
                 }
             }
         }
+
+        
 
         #endregion
     }
