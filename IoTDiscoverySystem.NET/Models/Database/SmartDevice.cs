@@ -10,8 +10,11 @@ using System.Threading.Tasks;
 namespace IoTDiscoverySystem.NET.Models.Database
 {
 
-    public sealed class Device
+    public sealed class SmartDevice
     {
+        [JsonProperty(PropertyName = "deviceInfo")]
+        public string DeviceInfo { get; set; }
+
         [JsonProperty(PropertyName = "id")]
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
@@ -19,19 +22,7 @@ namespace IoTDiscoverySystem.NET.Models.Database
         [JsonProperty(PropertyName = "ipAddress")]
         public string IpAddress { get; set; }
 
-        [JsonProperty(PropertyName = "deviceType")]
-        public string DeviceType { get; set; }
-
         [JsonProperty(PropertyName = "serialNumber")]
-        public string SerialNumber { get; set; }
-
-        [JsonProperty(PropertyName = "state")]
-        public string State { get; set; }
-
-        [JsonProperty(PropertyName = "tcpPort")]
-        public string TcpPort { get; set; }
-
-        [JsonProperty(PropertyName = "title")]
-        public string Title { get; set; }
+        public string SerialNumber { get; set; }  
     }
 }

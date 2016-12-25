@@ -68,11 +68,11 @@ namespace PotPiServer.Models
         /// <summary>
         /// A list of all the devices the Discovery System is aware of
         /// </summary>
-        public IEnumerable<Device> Devices
+        public IEnumerable<SmartDevice> SmartDevices
         {
             get
             {
-                return _database.Table<Device>();
+                return _database.Table<SmartDevice>();
             }
         }
 
@@ -117,11 +117,13 @@ namespace PotPiServer.Models
         /// </summary>
         public DiscoverySystemServer()
         {
-
+            // Connect to the database
             _database = new SQLiteConnection(new SQLite.Net.Platform.WinRT.SQLitePlatformWinRT(),
                                              Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "iotDiscSys.sqlite"));
-            _database.DropTable<Device>();
-            _database.CreateTable<Device>();
+
+            // Clear the smart device table 
+            _database.DropTable<SmartDevice>();
+            _database.CreateTable<SmartDevice>();
 
             _socket = new DatagramSocket();
         }
@@ -139,7 +141,7 @@ namespace PotPiServer.Models
         /// Initialize the Discovery System
         /// </summary>
         /// <returns></returns>
-        public async void Initialize(string udpPort, string deviceName = "", string serialNumber = "")
+        public async void Initialize(string udpPort, JObject deviceInfo)
         {
             Debug.WriteLine("Discovery System: Initializing");
 
@@ -179,92 +181,69 @@ namespace PotPiServer.Models
             try
             {
                 // Get the data from the packet
-                var result = args.GetDataStream();
-                var resultStream = result.AsStreamForRead(1024);
+                var resultStream = args.GetDataStream().AsStreamForRead();
                 using (var reader = new StreamReader(resultStream))
                 {
-                    // Load the raw data into a response object
-                    var response = new DiscoveryResponseMessage(await reader.ReadToEndAsync());
+                    string discoveryResponseString = await reader.ReadToEndAsync();
+                    JObject jDiscoveryResponse = JObject.Parse(discoveryResponseString);
 
-                    // If the response is valid
-                    if (response.IsValid)
+                    // The device must broadcast a brand, model, and serial number
+                    if (jDiscoveryResponse["brand"] != null &&
+                       jDiscoveryResponse["model"] != null &&
+                       jDiscoveryResponse["serialNumber"] != null)
                     {
-                        Debug.WriteLine("Contents: " + JsonConvert.SerializeObject(response));
+                        // Create a strongly typed model of this new device
+                        SmartDevice newSmartDevice = new SmartDevice();
+                        newSmartDevice.DeviceInfo = JsonConvert.SerializeObject(jDiscoveryResponse);
+                        newSmartDevice.IpAddress = args.RemoteAddress.DisplayName;
+                        newSmartDevice.SerialNumber = jDiscoveryResponse.Value<string>("serialNumber");
 
-                        #region Handle Previously Existing Devices
+                        // Get the current smart devices
+                        TableQuery<SmartDevice> smartDevices = _database.Table<SmartDevice>();
 
-                        // Go through all the current devices
-                        foreach (var device in Devices)
+                        // Go through the existing devices
+                        foreach (SmartDevice smartDevice in smartDevices)
                         {
-                            // If the stored device matches the device responding to the discovery request
-                            if (device.Title == response.Device &&
-                               device.SerialNumber == response.SerialNumber)
-                            {
-                                // If the match is exact
-                                if (device.IpAddress == response.IpAddress)
-                                {
-                                    Debug.WriteLine("Discovery System: Device already in system");
+                            // Convert the existing devices info to a JObject 
+                            JObject smartDeviceInfo = JObject.Parse(smartDevice.DeviceInfo);
 
-                                    // We already know about this device - do nothing
+                            // If this brand and serial number exist in the system
+                            if (smartDeviceInfo.Value<string>("brand") == jDiscoveryResponse.Value<string>("brand") &&
+                               smartDeviceInfo.Value<string>("serialNumber") == jDiscoveryResponse.Value<string>("serialNumber"))
+                            {
+                                // Silence the device to avoid repeat responses
+                                SilenceSmartDevice(newSmartDevice.IpAddress + jDiscoveryResponse.Value<string>("discoverySilenceUrl"));
+
+                                // If the IP address has changed
+                                if (smartDevice.IpAddress != newSmartDevice.IpAddress)
+                                {
+                                    // Update the smart device in the database
+                                    smartDevice.IpAddress = newSmartDevice.IpAddress;
+                                    _database.Update(smartDevice);
                                     return;
                                 }
-                                else // If the device got a new IP address
+                                else // If its a perfect match
                                 {
-                                    Debug.WriteLine("Discovery System: Device already in system - updating IP Address");
-
-                                    // Update the IP address 
-                                    device.IpAddress = response.IpAddress;
-
-                                    // Save the changes
-                                    _database.Update(device);
-
-                                    // We're done
+                                    // Ignore the response
                                     return;
                                 }
                             }
                         }
 
-                        #endregion
+                        // Silence the device to avoid repeat responses
+                        SilenceSmartDevice(newSmartDevice.IpAddress + jDiscoveryResponse.Value<string>("discoverySilenceUrl"));
 
-                        #region Handle New Devices
-
-                        Device newDevice = new Device();
-                        newDevice.DeviceType = response.DeviceType;
-                        newDevice.IpAddress = response.IpAddress;
-                        newDevice.Title = response.Device;
-                        newDevice.SerialNumber = response.SerialNumber;
-                        newDevice.State = "";
-                        newDevice.TcpPort = response.TcpPort;
-                        _database.Insert(newDevice);
-
-                        #endregion
-
-                        #region Inform Device Of Acceptance
-                        if (!String.IsNullOrEmpty(response.TcpPort))
-                        {
-
-                            // Create a TCP connection with the device
-                            StreamSocket _tcpConnection = new StreamSocket();
-                            await _tcpConnection.ConnectAsync(new HostName(response.IpAddress), response.TcpPort);
-
-                            // Create an Accept Message
-                            DiscoveryAcceptMessage acceptMessage = new DiscoveryAcceptMessage("DISCOVERED", _deviceName, IpAddress);
-
-                            byte[] buffer = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(acceptMessage));
-
-                            // Send the message
-                            await _tcpConnection.OutputStream.WriteAsync(buffer.AsBuffer());
-                        }
-                        #endregion
+                        // Add it to the database
+                        Debug.WriteLine("Added: " + newSmartDevice.DeviceInfo);
+                        _database.Insert(newSmartDevice);
 
                     }
-                    else // If the respons was not valid
+                    else // If the response was not valid
                     {
                         Debug.WriteLine("Discovery System: UDP packet not valid");
                         // Ignore the packet
                         return;
                     }
-
                 }
             }
             catch (Exception ex)
@@ -289,12 +268,16 @@ namespace PotPiServer.Models
                     {
                         // Include all known devices in the request to minimize traffic (smart devices can use this info to determine if they need to respond)
                         JArray jDevices = new JArray();
-                        foreach (var device in Devices)
+                        foreach (var smartDevice in SmartDevices)
                         {
+                            // Convert the existing device info to a JObject 
+                            JObject smartDeviceInfo = JObject.Parse(smartDevice.DeviceInfo);
+
                             JObject jDevice = new JObject();
-                            jDevice.Add("Device", device.Title);
-                            jDevice.Add("IpAddress", device.IpAddress);
-                            jDevice.Add("SerialNumber", device.SerialNumber);
+                            jDevice.Add("brand", smartDeviceInfo.Value<string>("brand"));
+                            jDevice.Add("ipAddress", smartDevice.IpAddress);
+                            jDevice.Add("model", smartDeviceInfo.Value<string>("model"));
+                            jDevice.Add("serialNumber", smartDevice.SerialNumber);
                             jDevices.Add(jDevice);
                         }
 
@@ -303,6 +286,8 @@ namespace PotPiServer.Models
 
                         // Convert the request to a JSON string
                         writer.WriteString(JsonConvert.SerializeObject(discoveryRequestMessage));
+
+                        Debug.WriteLine(JsonConvert.SerializeObject(discoveryRequestMessage));
 
                         // Send
                         await writer.StoreAsync();
@@ -315,23 +300,12 @@ namespace PotPiServer.Models
             }
         }
 
-        public async Task UpdateDeviceStates()
+        private async void SilenceSmartDevice(string apiUrl)
         {
-            foreach (var device in _database.Table<Device>())
-            {
-                if (device.DeviceType.ToLower() == "powerbox")
-                {
-                    using (HttpClient httpClient = new HttpClient())
-                    {
-                        HttpResponseMessage response = await httpClient.GetAsync(new Uri("http://" + device.IpAddress + "/api/outlets"));
-                        device.State = await response.Content.ReadAsStringAsync();
-                        _database.Update(device);
-                    }
-                }
-            }
+            Debug.WriteLine("Silencing device: " + apiUrl);
+            HttpClient httpClient = new HttpClient();
+            HttpResponseMessage response = await httpClient.GetAsync("http://" + apiUrl);
         }
-
-        
 
         #endregion
     }

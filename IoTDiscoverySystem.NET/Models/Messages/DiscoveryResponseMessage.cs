@@ -1,19 +1,14 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Diagnostics;
 
 namespace IoTDiscoverySystem.NET.Models.Messages
 {
 
     public sealed class DiscoveryResponseMessage
     {
-        #region Properties
-
-        #region Private
-
-        private string _device;
-
-        private string _deviceType;
+        #region Properties        
 
         private string _error;
 
@@ -24,10 +19,6 @@ namespace IoTDiscoverySystem.NET.Models.Messages
         private string _serialNumber;
 
         private string _tcpPort;
-
-        #endregion
-
-        #region Public
 
         [JsonIgnore]
         [JsonProperty(Required = Required.Default)]
@@ -49,22 +40,10 @@ namespace IoTDiscoverySystem.NET.Models.Messages
             {
                 // Make sure our minimum requirements are met
                 return !String.IsNullOrEmpty(IpAddress) &&
-                       !String.IsNullOrEmpty(Device) &&
-                       !String.IsNullOrEmpty(DeviceType) &&
                        !String.IsNullOrEmpty(SerialNumber) &&
                        !String.IsNullOrEmpty(TcpPort);
             }
         }
-
-        /// <summary>
-        /// The type of device responding
-        /// </summary>
-        public string Device { get { return _device;  } }
-
-        /// <summary>
-        /// The type of device responding
-        /// </summary>
-        public string DeviceType { get { return _deviceType; } }
 
         /// <summary>
         /// The PotPi Device Id
@@ -83,19 +62,16 @@ namespace IoTDiscoverySystem.NET.Models.Messages
 
         #endregion
 
-        #endregion
-
         #region Constructors
 
         public DiscoveryResponseMessage() { }
 
         public DiscoveryResponseMessage(string responseString)
         {
+            Debug.WriteLine(responseString);
             try
             {
                 JObject json = JObject.Parse(responseString);
-                _device = json["Device"].ToString();
-                _deviceType = json["DeviceType"].ToString();
                 _ipAddress = json["IpAddress"].ToString();
                 _potPiDeviceId = json["PotPiDeviceId"].ToString();
                 _serialNumber = json["SerialNumber"].ToString();
@@ -109,8 +85,7 @@ namespace IoTDiscoverySystem.NET.Models.Messages
 
         public DiscoveryResponseMessage(string device, string deviceType, string ipAddress, string potPiDeviceId, string serialNumber, string tcpPort)
         {            
-            _device = device;
-            _deviceType = deviceType;
+
             _ipAddress = ipAddress;
             _potPiDeviceId = potPiDeviceId;
             _serialNumber = serialNumber;

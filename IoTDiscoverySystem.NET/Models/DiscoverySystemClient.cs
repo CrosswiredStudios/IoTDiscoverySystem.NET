@@ -1,5 +1,6 @@
 ﻿using IoTDiscoverySystem.NET.Models.Messages;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -18,33 +19,16 @@ namespace PotPiPowerBox.Models
     public sealed class DiscoverySystemClient
     {
         #region Properties
-
-        #region Private
-
+        
         /// <summary>
         /// Flag to indicate if the system is broadcasting discovery responses
         /// </summary>
         private bool _broadcasting;
 
         /// <summary>
-        /// Port to send and receive TCP messages on
+        /// A JSON object that contains all the information about the device
         /// </summary>
-        private string _deviceName;
-
-        /// <summary>
-        /// The type of device
-        /// </summary>
-        private string _deviceType;
-
-        /// <summary>
-        /// The pot pi device id
-        /// </summary>
-        private string _potPiDeviceId;
-
-        /// <summary>
-        /// Port to send and receive TCP messages on
-        /// </summary>
-        private string _serialNumber;
+        private JObject _deviceInfo;
 
         /// <summary>
         /// UDP Socket object
@@ -52,19 +36,13 @@ namespace PotPiPowerBox.Models
         private DatagramSocket _socket;
 
         /// <summary>
-        /// Port to send and receive TCP messages on
-        /// </summary>
-        private string _tcpPort;
-
-        /// <summary>
         /// Port to send and receive UDP messages on
         /// </summary>
         private string _udpPort;
 
-        #endregion
-
-        #region Public
-
+        /// <summary>
+        /// The IpAddress of the device
+        /// </summary>
         public string IpAddress
         {
             get
@@ -105,8 +83,6 @@ namespace PotPiPowerBox.Models
 
         #endregion
 
-        #endregion
-
         #region Constructors
 
         /// <summary>
@@ -116,7 +92,6 @@ namespace PotPiPowerBox.Models
         {
             _broadcasting = false;
             _socket = new DatagramSocket();
-            _tcpPort = "";
             _udpPort = "";
         }
 
@@ -128,22 +103,16 @@ namespace PotPiPowerBox.Models
         /// Initiates the Discovery System Client. 
         /// </summary>
         /// <param name="udpPort">This is the port the system will listen for and broadcast udp packets</param>
-        /// <param name="tcpPort">This is the TCP port that your application is listening on for confirmation</param>
-        /// <param name="deviceName">This is the categorical or generic name for the device acting as a discovery system client</param>
-        /// <param name="serialNumber">The serial number is a unique Id that can be used to differentiate between similar devices</param>
-        public async void Initialize(string udpPort, string tcpPort = "", string deviceName = "", string deviceType = "", string serialNumber = "", string potPiDeviceId = "")
+        /// <param name="deviceInfo">A JSON object containing all the relevant device info</param>
+        public async void Initialize(string udpPort, JObject deviceInfo)
         {
             Debug.WriteLine("Discovery System: Initializing");
 
             try
             {
                 // Set initial variables
-                _deviceName = deviceName;
-                _deviceType = deviceType;
-                _potPiDeviceId = potPiDeviceId;
-                _serialNumber = serialNumber;
+                _deviceInfo = deviceInfo;
                 _udpPort = udpPort;
-                _tcpPort = tcpPort;
 
                 // Setup a UDP socket listener
                 _socket.MessageReceived += ReceivedDiscoveryRequest;
@@ -155,7 +124,6 @@ namespace PotPiPowerBox.Models
                 Debug.WriteLine("Discovery System: Failure");
                 Debug.WriteLine("Reason: " + ex.Message);
             }
-
         }
 
         /// <summary>
@@ -194,12 +162,11 @@ namespace PotPiPowerBox.Models
                                 // Go through the list of known devices
                                 foreach (var knownDevice in request.KnownDevices)
                                 {
-                                    // If this device is on the list
-                                    if (knownDevice["Device"].ToString() == _deviceName &&
-                                       knownDevice["IpAddress"].ToString() == IpAddress &&
-                                       knownDevice["SerialNumber"].ToString() == _serialNumber)
+                                    if(knownDevice.Value<string>("brand") == _deviceInfo.Value<string>("brand") &&
+                                        knownDevice.Value<string>("ipAddress") == _deviceInfo.Value<string>("brand") &&
+                                        knownDevice.Value<string>("model") == _deviceInfo.Value<string>("model") &&
+                                        knownDevice.Value<string>("serialNumber") == _deviceInfo.Value<string>("serialNumber"))
                                     {
-                                        // Disregard this discovery request
                                         return;
                                     }
                                 }
@@ -234,12 +201,12 @@ namespace PotPiPowerBox.Models
                     using (var writer = new DataWriter(stream))
                     {
                         // Create a discovery response message
-                        DiscoveryResponseMessage discoveryResponse = new DiscoveryResponseMessage(_deviceName, _deviceType, IpAddress, _potPiDeviceId, _serialNumber, _tcpPort);
+                       // DiscoveryResponseMessage discoveryResponse = new DiscoveryResponseMessage(_deviceName, _deviceType, IpAddress, _potPiDeviceId, _serialNumber, _tcpPort);
 
                         // Convert the request to a JSON string
-                        writer.WriteString(JsonConvert.SerializeObject(discoveryResponse));
+                        writer.WriteString(JsonConvert.SerializeObject(_deviceInfo));
 
-                        Debug.WriteLine(JsonConvert.SerializeObject(discoveryResponse));
+                        Debug.WriteLine(JsonConvert.SerializeObject(_deviceInfo));
                         
                         // Send
                         await writer.StoreAsync();
@@ -247,10 +214,10 @@ namespace PotPiPowerBox.Models
                 }
                 
 
-                // Enforce maximum of 1 minute of broadcasting
+                // Enforce maximum of 10 seconds of broadcasting
                 count++;
-                if (count == 60) _broadcasting = false;
-                await Task.Delay(1000);
+                if (count == 10) _broadcasting = false;
+                await Task.Delay(2000);
             }
         }
 

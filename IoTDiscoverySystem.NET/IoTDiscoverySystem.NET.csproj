@@ -34,7 +34,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Models\Database\Device.cs" />
+    <Compile Include="Models\Database\SmartDevice.cs" />
     <Compile Include="Models\DiscoverySystemClient.cs" />
     <Compile Include="Models\DiscoverySystemServer.cs" />
     <Compile Include="Models\Messages\DiscoveryAcceptMessage.cs" />
