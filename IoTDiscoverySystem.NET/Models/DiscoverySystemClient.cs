@@ -139,28 +139,26 @@ namespace PotPiPowerBox.Models
             {
                 // Get the data from the packet
                 var result = args.GetDataStream();
-                var resultStream = result.AsStreamForRead(1024);
+                var resultStream = result.AsStreamForRead();
                 using (var reader = new StreamReader(resultStream))
                 {
                     // Load the raw data into a response object
-                    var response = (await reader.ReadToEndAsync());
+                    var potentialRequest = (await reader.ReadToEndAsync());
 
-                    Debug.WriteLine("Contents: " + response);
-
-                    // Create a Discovery Request object from the data
-                    DiscoveryRequestMessage request = new DiscoveryRequestMessage(response.Trim());
+                    JObject jRequest = JObject.Parse(potentialRequest);
+                    Debug.WriteLine("Contents: " + potentialRequest);
 
                     // If the message was a valid request
-                    if (request.IsValid)
+                    if (jRequest["command"] != null)
                     {
                         // If it was a discovery request
-                        if (request.Command == "DISCOVER")
+                        if (jRequest.Value<string>("command").ToLower() == "discover")
                         {
                             // If the requestor included a list of its known devices
-                            if (request.KnownDevices.Count > 0)
+                            if (jRequest["knownDevices"] != null)
                             {
                                 // Go through the list of known devices
-                                foreach (var knownDevice in request.KnownDevices)
+                                foreach (var knownDevice in jRequest["KnownDevices"])
                                 {
                                     if(knownDevice.Value<string>("brand") == _deviceInfo.Value<string>("brand") &&
                                         knownDevice.Value<string>("ipAddress") == _deviceInfo.Value<string>("brand") &&

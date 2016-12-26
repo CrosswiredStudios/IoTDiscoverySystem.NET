@@ -31,6 +31,7 @@ namespace IoTDiscoverySystem.NET.Models.Messages
         /// <summary>
         /// Discovery Request Command
         /// </summary>
+        [JsonProperty(PropertyName = "command")]
         public string Command
         {
             get
@@ -87,6 +88,7 @@ namespace IoTDiscoverySystem.NET.Models.Messages
         /// <summary>
         /// A list of all the other devices that have been found by the device making the request
         /// </summary>
+        [JsonProperty(PropertyName = "knownDevices")]
         public JArray KnownDevices
         {
             get
