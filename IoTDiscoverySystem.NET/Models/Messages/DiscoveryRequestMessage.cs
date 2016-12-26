@@ -43,6 +43,7 @@ namespace IoTDiscoverySystem.NET.Models.Messages
         /// <summary>
         /// The type of device making the discovery request
         /// </summary>
+        [JsonProperty(PropertyName = "device")]
         public string Device
         {
             get
