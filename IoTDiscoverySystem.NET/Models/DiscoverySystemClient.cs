@@ -158,10 +158,18 @@ namespace PotPiPowerBox.Models
                             if (jRequest["knownDevices"] != null)
                             {
                                 // Go through the list of known devices
-                                foreach (var knownDevice in jRequest["KnownDevices"])
+                                foreach (var knownDevice in jRequest["knownDevices"])
                                 {
-                                    if(knownDevice.Value<string>("brand") == _deviceInfo.Value<string>("brand") &&
-                                        knownDevice.Value<string>("ipAddress") == _deviceInfo.Value<string>("brand") &&
+                                    var b = knownDevice.Value<string>("brand");
+                                    var b2 = _deviceInfo.Value<string>("brand");
+                                    var i = knownDevice.Value<string>("ipAddress");
+                                    var i2 = _deviceInfo.Value<string>("ipAddress");
+                                    var m = knownDevice.Value<string>("model");
+                                    var m2 = _deviceInfo.Value<string>("model");
+                                    var s = knownDevice.Value<string>("serialNumber");
+                                    var s2 = _deviceInfo.Value<string>("serialNumber");
+                                    if (knownDevice.Value<string>("brand") == _deviceInfo.Value<string>("brand") &&
+                                        knownDevice.Value<string>("ipAddress") == IpAddress &&
                                         knownDevice.Value<string>("model") == _deviceInfo.Value<string>("model") &&
                                         knownDevice.Value<string>("serialNumber") == _deviceInfo.Value<string>("serialNumber"))
                                     {
